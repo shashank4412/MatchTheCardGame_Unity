@@ -1,9 +1,7 @@
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
-
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
 
 public class CardController : MonoBehaviour
 {
@@ -57,7 +55,7 @@ public class CardController : MonoBehaviour
 		}
 
 		// Update card count on the stats board
-		statsBoard.SetCardsCount(cardList.Count);
+		statsBoard.SetCardsCount(cardList.Count - statsBoard.matchesCount * 2);
 
 		// Force layout build and disable auto-sizing
 		Invoke("DisableAutoSizing", 0.1f);
@@ -71,28 +69,34 @@ public class CardController : MonoBehaviour
 		TextAsset JSON = Resources.Load<TextAsset>("Cards/cardJSON");
 		List<string> list = JsonUtility.FromJson<cardJSON>(JSON.text).cards;
 
-		// Create CardConfig from cardfiles present under Resources folder
+		// shuffle the list and limit the number of pairs
+		list = Shuffle(list).Take(statsBoard.pairLimit).ToList();
+
+		// Make Pair/ double cards of each element in the list &
+		// Shuffle the list again to randomize pairs
+		list.AddRange(list);
+		list = Shuffle(list);
+
+		// For each card, Create CardConfig from cardfiles (present under Resources folder)
 		foreach (string card in list)
 			cards.Add(new CardConfig(card));
 
-		// Make Pair of each card
-		cards.AddRange(cards);
+		return cards;
+	}
+	private List<string> Shuffle(List<string> list) // Shuffle the order of card data
+	{
+		if (list == null || list.Count <= 0) return new List<string>();
 
 		// Shuffle the card data list
-		return Shuffle(cards);
-	}
-	private List<CardConfig> Shuffle(List<CardConfig> cardList) // Shuffle the order of card data
-	{
-		// Shuffle the card data list
-		for (int i = 0; i < cardList.Count; i++)
+		for (int i = 0; i < list.Count; i++)
 		{
-			int randomIndex = Random.Range(i, cardList.Count);
-			var temp = cardList[randomIndex];
-			cardList[randomIndex] = cardList[i];
-			cardList[i] = temp;
+			int randomIndex = Random.Range(i, list.Count);
+			var temp = list[randomIndex];
+			list[randomIndex] = list[i];
+			list[i] = temp;
 		}
 
-		return cardList;
+		return list;
 	}
 	private void DisableAutoSizing() // Disable auto-sizing after layout build
 	{
@@ -109,15 +113,15 @@ public class CardController : MonoBehaviour
 		// Play flip audio
 		audioController.Play(AudioType.CardFlipClip);
 
-		// Increment the Moves
-		statsBoard.IncrementMoves();
-
 		if (lastOpenedCard == null) lastOpenedCard = card; // If no card is opened
 		else HandleOpenedCard(card); // If a card is already opened
 	}
 	private void HandleOpenedCard(Card card)
 	{
-		// If the clicked card matches the last opened card
+		// Increase the Moves count
+		statsBoard.IncrementMovesCount();
+
+		// If the clicked card matching with last opened card
 		if (CardConfig.IsMatching(card.cardConfig, lastOpenedCard.cardConfig))
 			HandleMatchedCard(card);
 		else HandleMismatchedCard(card);
@@ -131,16 +135,12 @@ public class CardController : MonoBehaviour
 		audioController.Play(AudioType.MatchSuccessClip);
 
 		// Increment match count
-		statsBoard.IncrementMatches();
+		statsBoard.IncrementMatchesCount();
 
 		// Remove and save data from cardDataList
-		cardList.Remove(card.cardConfig);
-		cardList.Remove(lastOpenedCard.cardConfig);
+		card.SetUsed();
+		lastOpenedCard.SetUsed();
 		vault.SaveData(cardList, CardList_KEY);
-
-		// Remove matched cards from the grid
-		Destroy(card.gameObject);
-		Destroy(lastOpenedCard.gameObject);
 
 		// Update card count on the stats board
 		statsBoard.IncrementCardsCount(-2);
@@ -159,8 +159,8 @@ public class CardController : MonoBehaviour
 	}
 	private void CheckGameOver()
 	{
-		// Activate game over screen if no cards left
-		gameOverScreen.gameObject.SetActive(transform.childCount == 0);
+		// Activate game over screen if every card isUsed
+		gameOverScreen.gameObject.SetActive(statsBoard.cardsCount <= 0);
 	}
 	#endregion
 }

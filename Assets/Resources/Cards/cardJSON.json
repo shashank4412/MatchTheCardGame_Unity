@@ -39,7 +39,6 @@
 		"card_clubs_J",
 		"card_clubs_Q",
 		"card_clubs_K",
-		"card_joker_red",
 		"card_spades_A",
 		"card_spades_02",
 		"card_spades_03",
@@ -53,6 +52,7 @@
 		"card_spades_J",
 		"card_spades_Q",
 		"card_spades_K",
+		"card_joker_red",
 		"card_joker_black"
 	]
 }

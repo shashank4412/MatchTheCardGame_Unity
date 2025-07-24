@@ -1,6 +1,6 @@
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class StatsBoard : MonoBehaviour
 {
@@ -9,59 +9,84 @@ public class StatsBoard : MonoBehaviour
 	public Text matchesTxt;
 	public Text movesTxt;
 	public Text cardsTxt;
+	public Text pairLimitTxt;
+	public Slider pairLimitSlider;
 
-	private int matches;
-	private int moves;
-	private int cardsCount;
+	public int movesCount { get; private set; }
+	public int matchesCount { get; private set; }
+	public int cardsCount { get; private set; }
+	public int pairLimit { get; private set; }
 
-	private const string Matches_KEY = "mathes";
-	private const string Moves_KEY = "moves";
+	private const string MatchesCount_KEY = "matchesCount";
+	private const string MovesCount_KEY = "movesCount";
+	private const string PairLimit_KEY = "pairLimit";
 
 	private void Start()
 	{
 		vault = new Vault();
+
+		SetMatchesCount(vault.GetSavedData<int>(MatchesCount_KEY));
+		SetMovesCount(vault.GetSavedData<int>(MovesCount_KEY));
+		SetPairLimit(vault.GetSavedData<int>(PairLimit_KEY, 14));
+
 		resetBtn.onClick.AddListener(Reset);
-		SetMatchDetails(vault.GetSavedData<int>(Matches_KEY));
-		SetMoveDetails(vault.GetSavedData<int>(Moves_KEY));
+		pairLimitSlider.onValueChanged.AddListener(ChangePairLimit);
 	}
 
 
-	public void IncrementMatches(int value = 1)
+	public void IncrementMatchesCount(int value = 1)
 	{
-		SetMatchDetails(matches + value);
+		SetMatchesCount(matchesCount + value);
 	}
-	public void IncrementMoves(int value = 1)
+	public void IncrementMovesCount(int value = 1)
 	{
-		SetMoveDetails(moves + value);
+		SetMovesCount(movesCount + value);
 	}
 	public void IncrementCardsCount(int value)
 	{
 		SetCardsCount(cardsCount + value);
 	}
-
-
-	public void SetMatchDetails(int matches)
+	private void ChangePairLimit(float newLimit)
 	{
-		this.matches = matches;
-		matchesTxt.text = "Matches: " + matches;
-		vault.SaveData(matches, Matches_KEY);
+		int pairLimit = Mathf.RoundToInt(newLimit);
+		vault.DeleteAllData();
+		SetPairLimit(pairLimit);
+		Reload();
 	}
-	public void SetMoveDetails(int moves)
+
+
+	public void SetMatchesCount(int matches)
 	{
-		this.moves = moves;
+		this.matchesCount = matches;
+		matchesTxt.text = "Matches: " + matches;
+		vault.SaveData(matches, MatchesCount_KEY);
+	}
+	public void SetMovesCount(int moves)
+	{
+		this.movesCount = moves;
 		movesTxt.text = "Moves: " + moves;
-		vault.SaveData(moves, Moves_KEY);
+		vault.SaveData(moves, MovesCount_KEY);
 	}
 	public void SetCardsCount(int cardsCount)
 	{
 		this.cardsCount = cardsCount;
 		cardsTxt.text = "Cards: " + cardsCount;
 	}
-
+	public void SetPairLimit(int pairLimit)
+	{
+		this.pairLimit = pairLimit;
+		pairLimitTxt.text = "CardPairs <b>" + pairLimit + "</b>";
+		pairLimitSlider.value = pairLimit;
+		vault.SaveData(pairLimit, PairLimit_KEY);
+	}
 
 	private void Reset()
 	{
 		vault.DeleteAllData();
+		Reload();
+	}
+	private void Reload()
+	{
 		SceneManager.LoadScene(0);
 	}
 }

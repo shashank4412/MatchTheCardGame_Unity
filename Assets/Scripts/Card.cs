@@ -23,7 +23,11 @@ public class Card : MonoBehaviour
         this.cardConfig = cardConfig;
         this.onRevealAct = onRevealAct;
 
-        HideCard();
+        if (cardConfig.isUsed)
+        {
+            SetUsed(); RevealCard();
+        }
+        else HideCard();
     }
 
     public void RevealCard()
@@ -32,7 +36,7 @@ public class Card : MonoBehaviour
         isRevealed = true;
         cardBtn.enabled = false;
         cardFace.sprite = Resources.Load<Sprite>(cardConfig.cardFrontPath);
-        this.onRevealAct.Invoke();
+        if (!cardConfig.isUsed) this.onRevealAct.Invoke();
     }
 
     public void HoldAndHide()
@@ -44,5 +48,12 @@ public class Card : MonoBehaviour
         isRevealed = false;
         cardBtn.enabled = true;
         cardFace.sprite = Resources.Load<Sprite>(cardConfig.cardBackPath);
+    }
+
+    public void SetUsed()
+    {
+        cardConfig.isUsed = true;
+        cardBtn.enabled = false;
+        cardFace.color = new Color(1, 1, 1, 0.1f); // Make the card semi-transparent
     }
 }
